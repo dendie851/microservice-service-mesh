@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # 1. KONG API GATEWAY + MANAGED DASHBOARD
+  # =========================================================================
+  kong:
+    image: kong:3.4
+    container_name: kong-gateway
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_LISTEN: 0.0.0.0:8002
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+      KONG_ADMIN_GUI_API_URL: http://localhost:8001
+      # TAMBAHKAN INI UNTUK MEMPERBAIKI ERROR DI KONG MANAGER
+      KONG_CORS: "on"
+      KONG_CORS_ORIGINS: "*"
+    volumes:
+      - ./kong.yml:/usr/local/kong/kong.yml:ro
+    ports:
+      - "8000:8000" # JALUR PROXY UTAMA (Aplikasi/User)
+      - "8001:8001" # JALUR ADMIN API (PENTING untuk Kong Manager di Browser)
+      - "8002:8002" # JALUR DASHBOARD RESMI KONG
+    networks:
+      - app-network
+
+  # =========================================================================
+  # 2. THREE BACKEND SERVICES
+  # =========================================================================
+  order-service:
+    build:
+      context: ./service
+    container_name: order-service
+    # Jalankan perintah asli aplikasi Anda di sini (Contoh jika menggunakan Node.js/Python)
+    # command: ["npm", "start"] 
+    networks:
+      - app-network
+
+  auth-service:
+    build:
+      context: ./service
+    container_name: auth-service
+    networks:
+      - app-network
+
+  payment-service:
+    build:
+      context: ./service
+    container_name: payment-service
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
