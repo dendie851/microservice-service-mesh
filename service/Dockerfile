@@ -4,7 +4,8 @@ WORKDIR /app
 
 # Copy seluruh file program ke dalam container
 COPY . .
-
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 # Expose port sesuai yang digunakan aplikasi Anda
 EXPOSE 3000
 

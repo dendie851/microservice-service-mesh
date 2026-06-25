@@ -2,7 +2,7 @@ _format_version: "3.0"
 _transform: true
 
 # =========================================================================
-# 1. DEFINISI UPSTREAM (CIRCUIT BREAKER POOL)
+# 1. DEFINISI UPSTREAM (UNTUK CIRCUIT BREAKER & TIMEOUT MILIDETIK)
 # =========================================================================
 upstreams:
   - name: order-upstream
@@ -45,21 +45,30 @@ upstreams:
           successes: 2
 
 # =========================================================================
-# 2. TARGET MAPPING (MENGHUBUNGKAN KE CONTAINER)
+# 2. TARGET MAPPING (LOAD BALANCING KE REPLIKA KONTANER DOCKER)
 # =========================================================================
 targets:
-  - target: order-service:3000
+  # Pecah target order menjadi dua kontainer terpisah di bawah upstream yang sama
+  - target: order-service-1:3000
     upstream: order-upstream
+  - target: order-service-2:3000
+    upstream: order-upstream
+    
   - target: auth-service:3000
     upstream: auth-upstream
+    weight: 50
+
   - target: payment-service:3000
     upstream: payment-upstream
+    weight: 50
 
 # =========================================================================
-# 3. ROUTING & PEMBATAS WAKTU SUPER KILAT
+# 3. MANAGEMENT SERVICES, ROUTES, & PLUGINS
 # =========================================================================
 services:
-  # --- ORDER SERVICE ---
+  # -------------------------------------------------------------------------
+  # ORDER SERVICE (Rate Limiting + Circuit Breaker + JWT AUTH AKTIF)
+  # -------------------------------------------------------------------------
   - name: order-service
     host: order-upstream
     port: 80
@@ -71,14 +80,22 @@ services:
       - name: order-route
         paths:
           - /orders
+        strip_path: false     # Pastikan false agar python membaca path /orders utuh
     plugins:
       - name: rate-limiting
         tags: [pembatas-order]
         config:
           minute: 5
           policy: local
+      - name: jwt
+        tags: [jwt-order]
+        config:
+          claims_to_verify:
+            - exp
 
-  # --- AUTH SERVICE ---
+  # -------------------------------------------------------------------------
+  # AUTH SERVICE (Rate Limiting + Circuit Breaker)
+  # -------------------------------------------------------------------------
   - name: auth-service
     host: auth-upstream
     port: 80
@@ -90,14 +107,17 @@ services:
       - name: auth-route
         paths:
           - /auth
+        strip_path: false  
     plugins:
       - name: rate-limiting
         tags: [pembatas-auth]
         config:
           minute: 5
           policy: local
-  
-  # --- PAYMENT SERVICE ---
+
+  # -------------------------------------------------------------------------
+  # PAYMENT SERVICE (Rate Limiting + Circuit Breaker)
+  # -------------------------------------------------------------------------
   - name: payment-service
     host: payment-upstream
     port: 80
@@ -109,9 +129,26 @@ services:
       - name: payment-route
         paths:
           - /payments
+        strip_path: false  
     plugins:
       - name: rate-limiting
         tags: [pembatas-payment]
         config:
           minute: 5
           policy: local
+      - name: jwt
+        tags: [jwt-payment]
+        config:
+          claims_to_verify:
+            - exp
+
+# =========================================================================
+# 4. DATA KONSUMEN & KREDENSIAL JWT (PENCENTANG VALIDASI KONG)
+# =========================================================================
+consumers:
+  - username: user-aplikasi-kita
+
+jwt_secrets:
+  - consumer: user-aplikasi-kita
+    key: "iss-kampus-kita"
+    secret: "kunciRahasiaSuperAman123"

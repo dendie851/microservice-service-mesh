@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # =========================================================================
   # KONG API GATEWAY (Pintu Depan dengan 4 Fitur Unggulan)
@@ -20,7 +22,7 @@ services:
       - app-network
 
   # =========================================================================
-  # MICROSERVICES (Aplikasi Python Anda - Port Asli 3000)
+  # MICROSERVICES (Aplikasi Python Anda - Menggunakan Argumen List)
   # =========================================================================
   auth-service:
     build:
@@ -30,11 +32,21 @@ services:
     networks:
       - app-network
 
-  order-service:
+  # --- ORDER SERVICE REPLIKA 1 ---
+  order-service-1:
     build:
       context: ./service
-    container_name: order-service
-    command: ["Order Service", "3000"]
+    container_name: order-service-1
+    command: ["Order Service V1", "3000"]           # Menggunakan list sesuai app.py bawaan
+    networks:
+      - app-network
+
+  # --- ORDER SERVICE REPLIKA 2 ---
+  order-service-2:
+    build:
+      context: ./service
+    container_name: order-service-2
+    command: ["Order Service V2", "3000"]           # Menggunakan list sesuai app.py bawaan
     networks:
       - app-network
 
