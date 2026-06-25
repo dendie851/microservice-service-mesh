@@ -1,0 +1,4 @@
+JWT 
+Rate Limiting
+circuit braker 
+Loadbalacing

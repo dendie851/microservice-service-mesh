@@ -14,7 +14,7 @@ services:
       - name: auth-route
         paths:
           - /auth
-
+  
   - name: payment-service
     url: http://payment-service:3000
     routes:

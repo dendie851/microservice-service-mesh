@@ -1,23 +1,117 @@
 _format_version: "3.0"
+_transform: true
 
+# =========================================================================
+# 1. DEFINISI UPSTREAM (CIRCUIT BREAKER POOL)
+# =========================================================================
+upstreams:
+  - name: order-upstream
+    slots: 1000
+    healthchecks:
+      passive:
+        type: http
+        unhealthy:
+          http_statuses: [500, 502, 503, 504]
+          tcp_failures: 2
+          http_failures: 3
+        healthy:
+          http_statuses: [200, 201]
+          successes: 2
+
+  - name: auth-upstream
+    slots: 1000
+    healthchecks:
+      passive:
+        type: http
+        unhealthy:
+          http_statuses: [500, 502, 503, 504]
+          tcp_failures: 2
+          http_failures: 3
+        healthy:
+          http_statuses: [200, 201]
+          successes: 2
+
+  - name: payment-upstream
+    slots: 1000
+    healthchecks:
+      passive:
+        type: http
+        unhealthy:
+          http_statuses: [500, 502, 503, 504]
+          tcp_failures: 2
+          http_failures: 3
+        healthy:
+          http_statuses: [200, 201]
+          successes: 2
+
+# =========================================================================
+# 2. TARGET MAPPING (MENGHUBUNGKAN KE CONTAINER)
+# =========================================================================
+targets:
+  - target: order-service:3000
+    upstream: order-upstream
+  - target: auth-service:3000
+    upstream: auth-upstream
+  - target: payment-service:3000
+    upstream: payment-upstream
+
+# =========================================================================
+# 3. ROUTING & PEMBATAS WAKTU SUPER KILAT
+# =========================================================================
 services:
+  # --- ORDER SERVICE ---
   - name: order-service
-    url: http://order-service:3000
+    host: order-upstream
+    port: 80
+    retries: 0
+    connect_timeout: 1000
+    read_timeout: 1000
+    write_timeout: 1000
     routes:
       - name: order-route
         paths:
           - /orders
+    plugins:
+      - name: rate-limiting
+        tags: [pembatas-order]
+        config:
+          minute: 5
+          policy: local
 
+  # --- AUTH SERVICE ---
   - name: auth-service
-    url: http://auth-service:3000
+    host: auth-upstream
+    port: 80
+    retries: 0
+    connect_timeout: 1000
+    read_timeout: 1000
+    write_timeout: 1000
     routes:
       - name: auth-route
         paths:
           - /auth
-
+    plugins:
+      - name: rate-limiting
+        tags: [pembatas-auth]
+        config:
+          minute: 5
+          policy: local
+  
+  # --- PAYMENT SERVICE ---
   - name: payment-service
-    url: http://payment-service:3000
+    host: payment-upstream
+    port: 80
+    retries: 0
+    connect_timeout: 1000
+    read_timeout: 1000
+    write_timeout: 1000
     routes:
       - name: payment-route
         paths:
           - /payments
+    plugins:
+      - name: rate-limiting
+        tags: [pembatas-payment]
+        config:
+          minute: 5
+          policy: local

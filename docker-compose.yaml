@@ -1,49 +1,40 @@
-version: '3.8'
-
 services:
   # =========================================================================
-  # 1. KONG API GATEWAY + MANAGED DASHBOARD
+  # KONG API GATEWAY (Pintu Depan dengan 4 Fitur Unggulan)
   # =========================================================================
   kong:
     image: kong:3.4
     container_name: kong-gateway
     environment:
-      KONG_DATABASE: "off"
+      KONG_DATABASE: "off"                           # Mode DB-less (membaca langsung dari kong.yml)
       KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001
-      KONG_ADMIN_GUI_LISTEN: 0.0.0.0:8002
-      KONG_ADMIN_GUI_URL: http://localhost:8002
-      KONG_ADMIN_GUI_API_URL: http://localhost:8001
-      # TAMBAHKAN INI UNTUK MEMPERBAIKI ERROR DI KONG MANAGER
-      KONG_CORS: "on"
-      KONG_CORS_ORIGINS: "*"
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001                # Port Admin API (untuk simulasi JWT via curl)
+      KONG_ADMIN_GUI_LISTEN: 0.0.0.0:8002            # Port Dashboard Kong Manager
     volumes:
-      - ./kong.yml:/usr/local/kong/kong.yml:ro
+      - ./kong.yml:/usr/local/kong/kong.yml:ro       # Sinkronisasi file konfigurasi
     ports:
-      - "8000:8000" # JALUR PROXY UTAMA (Aplikasi/User)
-      - "8001:8001" # JALUR ADMIN API (PENTING untuk Kong Manager di Browser)
-      - "8002:8002" # JALUR DASHBOARD RESMI KONG
+      - "8000:8000" # Jalur akses API Utama (Buka di browser/Postman)
+      - "8001:8001" # Admin API Kong
+      - "8002:8002" # Dashboard Kong Manager
     networks:
       - app-network
 
   # =========================================================================
-  # 2. THREE BACKEND SERVICES
+  # MICROSERVICES (Aplikasi Python Anda - Port Asli 3000)
   # =========================================================================
-  order-service:
-    build:
-      context: ./service
-    container_name: order-service
-    # Jalankan perintah asli aplikasi Anda di sini (Contoh jika menggunakan Node.js/Python)
-    # command: ["npm", "start"] 
-    networks:
-      - app-network
-
   auth-service:
     build:
       context: ./service
     container_name: auth-service
+    command: ["Auth Service", "3000"]
+    networks:
+      - app-network
+
+  order-service:
+    build:
+      context: ./service
+    container_name: order-service
+    command: ["Order Service", "3000"]
     networks:
       - app-network
 
@@ -51,6 +42,7 @@ services:
     build:
       context: ./service
     container_name: payment-service
+    command: ["Payment Service", "3000"]
     networks:
       - app-network
 
