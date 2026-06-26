@@ -1,4 +1,4 @@
-# Microservice Service Mesh with Kong API Gateway
+# Microservice with Kong API Gateway
 
 An API Gateway is the single entry point for all client requests in a microservice architecture. Instead of exposing each microservice directly to the outside world, the gateway sits in front of them and handles cross-cutting concerns such as authentication, authorization, rate limiting, load balancing, circuit breaking, caching, logging, and monitoring. 
 
