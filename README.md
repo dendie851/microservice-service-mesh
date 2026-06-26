@@ -35,11 +35,6 @@ Kong is a high-performance, cloud-native API gateway built on NGINX that can be 
       - [Load Balancing Configuration](#load-balancing-configuration)
       - [Round Robin Example](#round-robin-example)
       - [Health Checks](#health-checks)
-  - [Observability \& Tracing](#observability--tracing)
-    - [Three Pillars of Observability](#three-pillars-of-observability)
-    - [OpenTelemetry + Jaeger](#opentelemetry--jaeger)
-      - [Accessing Traces](#accessing-traces)
-    - [Prometheus Metrics](#prometheus-metrics)
   - [Quick Start](#quick-start)
     - [Prerequisites](#prerequisites)
     - [Running the Stack](#running-the-stack)
@@ -317,47 +312,6 @@ Kong will automatically distribute requests across:
 #### Health Checks
 
 Kong can perform active health checks to automatically remove unhealthy targets from the load balancer pool and add them back when they recover.
-
----
-
-## Observability & Tracing
-
-Observability is the ability to understand the internal state of a system from its external outputs. In a microservice architecture, this is essential for diagnosing performance issues and debugging distributed transactions.
-
-### Three Pillars of Observability
-
-1. **Metrics**: Numerical data over time (latency, error rate, throughput)
-2. **Logs**: Discrete event records with context
-3. **Traces**: End-to-end request path across services (distributed tracing)
-
-### OpenTelemetry + Jaeger
-
-This project uses OpenTelemetry for distributed tracing:
-
-- Kong generates trace data for every request
-- Data is exported via OTLP (OpenTelemetry Protocol) to Jaeger
-- Jaeger UI shows the full request timeline, including:
-  - Time spent in Kong gateway (routing, plugins)
-  - Time spent in each microservice
-  - Network latency between services
-  - Error spans and annotations
-
-#### Accessing Traces
-
-1. Open Jaeger UI: `http://localhost:16686`
-2. Select service: `kong-gateway`, `auth-service`, `order-service`, or `payment-service`
-3. Click "Search" to view traces
-4. Drill down into individual spans to see timing and metadata
-
-### Prometheus Metrics
-
-Kong Prometheus plugin exposes metrics at `http://localhost:8001/metrics`:
-
-- **HTTP request/response metrics**: Status codes, request size, response size
-- **Latency metrics**: Total, upstream, Kong processing time
-- **Bandwidth metrics**: Upload/download bytes
-- **Upstream health metrics**: Target health status
-- **Plugin metrics**: Per-plugin execution time and status
 
 ---
 
